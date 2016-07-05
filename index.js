@@ -119,6 +119,12 @@ function from_filename(filename, parent, opt, cb) {
         return cb(null, cached.deps, cached.src);
     }
 
+    // Only look into .js files for further dependencies
+    var ext = path.extname(filename).toLowerCase();
+    if (opt.fileTypes.indexOf(ext) === -1) {
+        return cb(null, [], null)
+    }
+
     fs.readFile(filename, 'utf8', function(err, content) {
         if (err) {
             return cb(err);
@@ -126,7 +132,7 @@ function from_filename(filename, parent, opt, cb) {
 
         // must be set before the compile call to handle circular references
         var result = cache[filename] = { deps: [] };
-
+        
         try {
             from_source(content, parent, opt, function(err, deps) {
                 if (err) {
@@ -174,6 +180,9 @@ module.exports = function(filename, opt, cb) {
 
     // add the cache storage
     opt.cache = opt.cache || {};
+    
+    // File types we can look into for further dependencies
+    opt.fileTypes = opt.fileTypes || ['.js'];
 
     // default resolver if none specified just resolves as node would
     opt.resolve = opt.resolve || function(id, parent, cb) {
